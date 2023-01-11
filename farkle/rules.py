@@ -3,6 +3,8 @@ import argparse
 from typing import Sized
 from itertools import combinations, product
 
+from numpy import number
+
 
 _CLASSIC = {
     # Ones
@@ -62,7 +64,51 @@ def score_remainder(remainder: tuple[int, ...]):
     one_score = remainder.count(1) * CLASSIC[tuple([1])]
     # individual 5s
     five_score = remainder.count(5) * CLASSIC[tuple([5])]
-    return one_score + five_score
+    return one_score + five_score, tuple(sorted(n for n in remainder if n not in [1, 5]))
+
+
+# BARBARIAN
+def get_score_and_remainder(roll: tuple[int, ...]) -> tuple[int, tuple[int]]:
+    roll = tuple(sorted(roll))
+    num_dice = len(roll)
+
+    if num_dice > 6:
+        raise NotImplementedError("Not supported yet, but maybe one day...")
+
+    if num_dice == 6:
+        if result := _get_score(roll):
+            return result, tuple()
+
+    if num_dice >= 5:
+        for combination, _remainder in combinations_with_remainder(roll, 5):
+            result = _get_score(tuple(combination))
+            if result is not None:
+                return result, tuple(sorted(_remainder))
+
+    if num_dice >= 4:
+        for combination, _remainder in combinations_with_remainder(roll, 4):
+            result = _get_score(tuple(combination))
+            if result is not None:
+                return result, tuple(sorted(_remainder))
+
+    if num_dice >= 3:
+        for combination, _remainder in combinations_with_remainder(roll, 3):
+            result = _get_score(tuple(combination))
+            if result is not None:
+                return result, tuple(sorted(_remainder))
+
+    remainder = roll
+    # individual 1s
+    num_ones = remainder.count(1)
+    if num_ones:
+        return CLASSIC[tuple([1])], tuple([*remainder[: remainder.index(1)], *remainder[remainder.index(1) + 1 :]])
+
+    # individual 5s
+    num_ones = remainder.count(5)
+    if num_ones:
+        return CLASSIC[tuple([5])], tuple([*remainder[: remainder.index(5)], *remainder[remainder.index(5) + 1 :]])
+
+    return 0, roll
 
 
 def get_score(roll: tuple[int, ...]):
